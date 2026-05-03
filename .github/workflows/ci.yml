@@ -1,0 +1,122 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            clang-format \
+            file \
+            python3-pip \
+            realpath \
+            shellcheck
+          python3 -m pip install --break-system-packages cpplint reuse
+
+      - name: Run lint
+        run: scripts/ci-github.sh lint
+
+      - name: Upload lint logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-artifacts
+          path: build/
+          if-no-files-found: ignore
+
+  clang-cross-build-and-test:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            ccache \
+            clang \
+            cmake \
+            gcc-aarch64-linux-gnu \
+            g++-aarch64-linux-gnu \
+            libc6-dev-arm64-cross \
+            lld \
+            ninja-build \
+            python3 \
+            qemu-user
+
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ccache
+          key: ${{ runner.os }}-ccache-clang-${{ hashFiles('CMakeLists.txt', 'kleidicv/CMakeLists.txt', 'test/CMakeLists.txt', 'scripts/ci-github.sh') }}
+          restore-keys: |
+            ${{ runner.os }}-ccache-clang-
+
+      - name: Run clang cross build and tests
+        run: scripts/ci-github.sh clang
+
+      - name: Upload clang test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: clang-test-results
+          path: build/github/test-results/
+          if-no-files-found: ignore
+
+  gcc-cross-build-and-test:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            ccache \
+            cmake \
+            gcc-aarch64-linux-gnu \
+            g++-aarch64-linux-gnu \
+            libc6-dev-arm64-cross \
+            ninja-build \
+            python3 \
+            qemu-user
+
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ccache
+          key: ${{ runner.os }}-ccache-gcc-${{ hashFiles('CMakeLists.txt', 'kleidicv/CMakeLists.txt', 'test/CMakeLists.txt', 'scripts/ci-github.sh') }}
+          restore-keys: |
+            ${{ runner.os }}-ccache-gcc-
+
+      - name: Run gcc cross build and tests
+        run: scripts/ci-github.sh gcc
+
+      - name: Upload gcc test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gcc-test-results
+          path: build/github/test-results/
+          if-no-files-found: ignore
