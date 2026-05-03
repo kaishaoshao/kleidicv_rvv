@@ -41,12 +41,14 @@ set_target_properties(kleidicv_thread
 )
 
 if(NOT BUILD_SHARED_LIBS)
-  ocv_install_target(kleidicv_neon
-    EXPORT OpenCVModules
-    ARCHIVE
-    DESTINATION ${OPENCV_3P_LIB_INSTALL_PATH}
-    COMPONENT dev
-  )
+  if(KLEIDICV_ENABLE_NEON)
+    ocv_install_target(kleidicv_neon
+      EXPORT OpenCVModules
+      ARCHIVE
+      DESTINATION ${OPENCV_3P_LIB_INSTALL_PATH}
+      COMPONENT dev
+    )
+  endif()
   if(KLEIDICV_ENABLE_SVE2)
     ocv_install_target(kleidicv_sve2
       EXPORT OpenCVModules

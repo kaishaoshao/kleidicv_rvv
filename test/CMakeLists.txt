@@ -57,20 +57,33 @@ FetchContent_MakeAvailable(googletest)
 
 add_subdirectory(api)
 add_subdirectory(framework)
-add_subdirectory(unit_neon)
+if(KLEIDICV_ENABLE_NEON)
+  add_subdirectory(unit_neon)
+endif()
 
 # Target to build all tests.
 add_custom_target(
   kleidicv-test
-  DEPENDS kleidicv-framework-test kleidicv-api-test kleidicv-neon-unit-test
+  DEPENDS kleidicv-framework-test kleidicv-api-test
 )
+
+if(KLEIDICV_ENABLE_NEON)
+  add_dependencies(kleidicv-test kleidicv-neon-unit-test)
+endif()
 
 # Target to build and run all tests.
 add_custom_target(
   check-kleidicv
   COMMAND kleidicv-framework-test
   COMMAND kleidicv-api-test
-  COMMAND kleidicv-neon-unit-test
   DEPENDS kleidicv-test
   USES_TERMINAL
 )
+
+if(KLEIDICV_ENABLE_NEON)
+  add_custom_command(
+    TARGET check-kleidicv
+    POST_BUILD
+    COMMAND kleidicv-neon-unit-test
+  )
+endif()

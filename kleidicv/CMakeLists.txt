@@ -6,6 +6,14 @@ cmake_minimum_required(VERSION 3.16)
 
 project("KleidiCV")
 
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|AARCH64|arm64|ARM64)$")
+  set(KLEIDICV_AARCH64_TARGET_DEFAULT ON)
+else()
+  set(KLEIDICV_AARCH64_TARGET_DEFAULT OFF)
+endif()
+
+option(KLEIDICV_ENABLE_NEON "Enable Neon code paths" OFF)
+
 # Choose the default value for the KLEIDICV_ENABLE_SVE2 option
 # according to the compiler version and the system. The list of compiler
 # versions recognised as supporting SVE2 may be extended in future.
@@ -17,6 +25,8 @@ if (((CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND
       CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12) OR
      (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND
       CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 10))
+    AND
+    KLEIDICV_AARCH64_TARGET_DEFAULT
     AND
     (CMAKE_SYSTEM_NAME STREQUAL "Linux" OR
      CMAKE_SYSTEM_NAME STREQUAL "Android")
@@ -80,6 +90,12 @@ endif()
 
 if(KLEIDICV_ENABLE_SME2 AND NOT KLEIDICV_LIMIT_SME2_TO_SELECTED_ALGORITHMS)
   set(KLEIDICV_ALWAYS_ENABLE_SME2 ON)
+endif()
+
+if((KLEIDICV_ENABLE_SVE2 OR KLEIDICV_ENABLE_SME OR KLEIDICV_ENABLE_SME2) AND
+   NOT KLEIDICV_ENABLE_NEON)
+  message(FATAL_ERROR
+    "KLEIDICV_ENABLE_NEON must be ON when enabling SVE2/SME/SME2 backends.")
 endif()
 
 configure_file("${CMAKE_CURRENT_LIST_DIR}/include/kleidicv/config.h.in" "include/kleidicv/config.h")
@@ -163,14 +179,17 @@ else()
   list(APPEND KLEIDICV_CXX_FLAGS "-O2" "-g0" "-fomit-frame-pointer")
 endif()
 
-add_library(kleidicv_neon OBJECT ${KLEIDICV_NEON_SOURCES})
-target_include_directories(kleidicv_neon PRIVATE ${KLEIDICV_INCLUDE_DIRS})
-set_target_properties(kleidicv_neon PROPERTIES CXX_STANDARD 17)
-target_compile_options(kleidicv_neon PRIVATE
-  ${KLEIDICV_CXX_FLAGS}
-  "-march=armv8-a"
-  "-DKLEIDICV_TARGET_NEON=1"
-)
+if(KLEIDICV_ENABLE_NEON)
+  add_library(kleidicv_neon OBJECT ${KLEIDICV_NEON_SOURCES})
+  target_include_directories(kleidicv_neon PRIVATE ${KLEIDICV_INCLUDE_DIRS})
+  set_target_properties(kleidicv_neon PROPERTIES CXX_STANDARD 17)
+
+  target_compile_options(kleidicv_neon PRIVATE
+    ${KLEIDICV_CXX_FLAGS}
+    "-march=armv8-a"
+    "-DKLEIDICV_TARGET_NEON=1"
+  )
+endif()
 
 if(KLEIDICV_ENABLE_SVE2)
   add_library(kleidicv_sve2 OBJECT ${KLEIDICV_SVE2_SOURCES})
@@ -225,7 +244,9 @@ add_library(kleidicv STATIC ${KLEIDICV_API_SOURCES})
 target_include_directories(kleidicv PRIVATE ${KLEIDICV_INCLUDE_DIRS})
 set_target_properties(kleidicv PROPERTIES CXX_STANDARD 17)
 target_compile_options(kleidicv PRIVATE ${KLEIDICV_CXX_FLAGS})
-target_link_libraries(kleidicv PRIVATE kleidicv_neon)
+if(KLEIDICV_ENABLE_NEON)
+  target_link_libraries(kleidicv PRIVATE kleidicv_neon)
+endif()
 
 if(KLEIDICV_ENABLE_SVE2)
   target_link_libraries(kleidicv PRIVATE kleidicv_sve2)
