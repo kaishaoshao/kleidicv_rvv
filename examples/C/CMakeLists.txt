@@ -18,7 +18,7 @@ target_include_directories(
   ${CMAKE_CURRENT_BINARY_DIR}/../../kleidicv/include
 )
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND KLEIDICV_ENABLE_NEON)
   # Trying to link without the C++ runtime. Should work in case of gcc and clang.
   list(REMOVE_ITEM CMAKE_CXX_IMPLICIT_LINK_LIBRARIES stdc++ c++)
   set_target_properties(

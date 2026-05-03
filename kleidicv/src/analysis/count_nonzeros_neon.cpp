@@ -59,10 +59,3 @@ KLEIDICV_TARGET_FN_ATTRS static kleidicv_error_t count_nonzeros(
 }
 
 }  // namespace kleidicv::neon
-
-extern "C" {
-
-decltype(kleidicv::neon::count_nonzeros<uint8_t>) *kleidicv_count_nonzeros_u8 =
-    kleidicv::neon::count_nonzeros<uint8_t>;
-
-}  // extern "C"

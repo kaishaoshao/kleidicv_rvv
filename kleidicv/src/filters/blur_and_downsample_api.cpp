@@ -8,7 +8,8 @@
 
 KLEIDICV_MULTIVERSION_C_API_WITH_SME(
     kleidicv_blur_and_downsample_stripe_u8,
-    &kleidicv::neon::kleidicv_blur_and_downsample_stripe_u8,
+    KLEIDICV_NEON_IMPL_IF(
+        &kleidicv::neon::kleidicv_blur_and_downsample_stripe_u8),
     &kleidicv::sve2::kleidicv_blur_and_downsample_stripe_u8,
     &kleidicv::sme::kleidicv_blur_and_downsample_stripe_u8, nullptr);
 

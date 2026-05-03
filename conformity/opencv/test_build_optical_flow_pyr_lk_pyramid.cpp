@@ -300,10 +300,10 @@ static bool run_build_optical_flow_case(cv::Size win_size, size_t max_level,
   return false;
 }
 
-#define DEFINE_BUILD_OPTICAL_FLOW_TEST(win_w, win_h, lvl, ch)                \
-  bool                                                                       \
-  test_build_optical_flow_lk_pyramid_w##win_w##x##win_h##_l##lvl##_c##ch() { \
-    return run_build_optical_flow_case(cv::Size{win_w, win_h}, lvl, ch);     \
+#define DEFINE_BUILD_OPTICAL_FLOW_TEST(win_w, win_h, lvl, ch)                    \
+  bool                                                                           \
+      test_build_optical_flow_lk_pyramid_w##win_w##x##win_h##_l##lvl##_c##ch() { \
+    return run_build_optical_flow_case(cv::Size{win_w, win_h}, lvl, ch);         \
   }
 
 #define DEFINE_BUILD_OPTICAL_FLOW_TEST_ALL_CHANNELS(win_w, win_h, lvl) \

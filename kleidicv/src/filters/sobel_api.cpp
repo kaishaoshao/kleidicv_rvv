@@ -6,10 +6,10 @@
 #include "kleidicv/filters/sobel.h"
 #include "kleidicv/kleidicv.h"
 
-#define KLEIDICV_DEFINE_C_API(name, partialname)           \
-  KLEIDICV_MULTIVERSION_C_API_WITH_SME(                    \
-      name, &kleidicv::neon::partialname,                  \
-      KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::partialname), \
+#define KLEIDICV_DEFINE_C_API(name, partialname)                 \
+  KLEIDICV_MULTIVERSION_C_API_WITH_SME(                          \
+      name, KLEIDICV_NEON_IMPL_IF(&kleidicv::neon::partialname), \
+      KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::partialname),       \
       &kleidicv::sme::partialname, nullptr)
 
 KLEIDICV_DEFINE_C_API(kleidicv_sobel_3x3_horizontal_stripe_s16_u8,

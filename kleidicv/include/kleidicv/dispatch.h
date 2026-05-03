@@ -6,6 +6,21 @@
 #define KLEIDICV_DISPATCH_H
 
 #include "kleidicv/config.h"
+#include "kleidicv/ctypes.h"
+
+template <typename FuncPtr>
+struct NotImplementedBackend;
+
+template <typename... Args>
+struct NotImplementedBackend<kleidicv_error_t (*)(Args...)> {
+  static kleidicv_error_t fn(Args...) { return KLEIDICV_ERROR_NOT_IMPLEMENTED; }
+};
+
+#if KLEIDICV_ENABLE_NEON
+#define KLEIDICV_NEON_IMPL_IF(func) func
+#else
+#define KLEIDICV_NEON_IMPL_IF(func) (&NotImplementedBackend<decltype(func)>::fn)
+#endif
 
 #if KLEIDICV_ENABLE_SME2 || KLEIDICV_ENABLE_SME || KLEIDICV_ENABLE_SVE2
 

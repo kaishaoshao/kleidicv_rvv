@@ -6,11 +6,11 @@
 #include "kleidicv/dispatch.h"
 #include "kleidicv/kleidicv.h"
 
-#define KLEIDICV_DEFINE_C_API(name, type)                     \
-  KLEIDICV_MULTIVERSION_C_API_WITH_SME(                       \
-      name, &kleidicv::neon::in_range<type>,                  \
-      KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::in_range<type>), \
-      &kleidicv::sme::in_range<type>,                         \
+#define KLEIDICV_DEFINE_C_API(name, type)                           \
+  KLEIDICV_MULTIVERSION_C_API_WITH_SME(                             \
+      name, KLEIDICV_NEON_IMPL_IF(&kleidicv::neon::in_range<type>), \
+      KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::in_range<type>),       \
+      &kleidicv::sme::in_range<type>,                               \
       KLEIDICV_SME2_IMPL_IF(&kleidicv::sme2::in_range<type>))
 
 KLEIDICV_DEFINE_C_API(kleidicv_in_range_u8, uint8_t);

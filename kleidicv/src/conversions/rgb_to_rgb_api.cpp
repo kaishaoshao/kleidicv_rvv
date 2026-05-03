@@ -7,10 +7,10 @@
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/types.h"
 
-#define KLEIDICV_DEFINE_C_API(name, partialname)           \
-  KLEIDICV_MULTIVERSION_C_API_WITH_SME(                    \
-      name, &kleidicv::neon::partialname,                  \
-      KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::partialname), \
+#define KLEIDICV_DEFINE_C_API(name, partialname)                 \
+  KLEIDICV_MULTIVERSION_C_API_WITH_SME(                          \
+      name, KLEIDICV_NEON_IMPL_IF(&kleidicv::neon::partialname), \
+      KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::partialname),       \
       &kleidicv::sme::partialname, nullptr)
 
 KLEIDICV_DEFINE_C_API(kleidicv_rgb_to_bgr_u8, rgb_to_bgr_u8);

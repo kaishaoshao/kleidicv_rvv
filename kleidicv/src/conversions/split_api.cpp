@@ -6,5 +6,5 @@
 #include "kleidicv/dispatch.h"
 #include "kleidicv/kleidicv.h"
 
-KLEIDICV_MULTIVERSION_C_API_WITHOUT_SME(kleidicv_split, &kleidicv::neon::split,
-                                        nullptr);
+KLEIDICV_MULTIVERSION_C_API_WITHOUT_SME(
+    kleidicv_split, KLEIDICV_NEON_IMPL_IF(&kleidicv::neon::split), nullptr);

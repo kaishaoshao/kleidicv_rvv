@@ -6,11 +6,13 @@
 #include "kleidicv/filters/median_blur.h"
 #include "kleidicv/kleidicv.h"
 
-#define KLEIDICV_DEFINE_C_API(name, type)                              \
-  KLEIDICV_MULTIVERSION_C_API_WITH_SME(                                \
-      name, &kleidicv::neon::median_blur_sorting_network_stripe<type>, \
-      KLEIDICV_SVE2_IMPL_IF(                                           \
-          kleidicv::sve2::median_blur_sorting_network_stripe<type>),   \
+#define KLEIDICV_DEFINE_C_API(name, type)                             \
+  KLEIDICV_MULTIVERSION_C_API_WITH_SME(                               \
+      name,                                                           \
+      KLEIDICV_NEON_IMPL_IF(                                          \
+          &kleidicv::neon::median_blur_sorting_network_stripe<type>), \
+      KLEIDICV_SVE2_IMPL_IF(                                          \
+          kleidicv::sve2::median_blur_sorting_network_stripe<type>),  \
       &kleidicv::sme::median_blur_sorting_network_stripe<type>, nullptr)
 
 KLEIDICV_DEFINE_C_API(kleidicv_median_blur_sorting_network_stripe_s8, int8_t);
@@ -31,11 +33,13 @@ KLEIDICV_DEFINE_C_API(kleidicv_median_blur_sorting_network_stripe_f32, float);
 
 KLEIDICV_MULTIVERSION_C_API_WITHOUT_SME(
     kleidicv_median_blur_small_hist_stripe_u8,
-    &kleidicv::neon::median_blur_small_hist_stripe_u8, nullptr);
+    KLEIDICV_NEON_IMPL_IF(&kleidicv::neon::median_blur_small_hist_stripe_u8),
+    nullptr);
 
 KLEIDICV_MULTIVERSION_C_API_WITHOUT_SME(
     kleidicv_median_blur_large_hist_stripe_u8,
-    &kleidicv::neon::median_blur_large_hist_stripe_u8, nullptr);
+    KLEIDICV_NEON_IMPL_IF(&kleidicv::neon::median_blur_large_hist_stripe_u8),
+    nullptr);
 
 namespace kleidicv {
 

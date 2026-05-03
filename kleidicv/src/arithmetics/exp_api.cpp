@@ -7,9 +7,10 @@
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/types.h"
 
-#define KLEIDICV_DEFINE_C_API(name, type)                           \
-  KLEIDICV_MULTIVERSION_C_API_WITH_SME(                             \
-      name, &kleidicv::neon::exp<type>, &kleidicv::sve2::exp<type>, \
-      &kleidicv::sme::exp<type>, &kleidicv::sme2::exp<type>)
+#define KLEIDICV_DEFINE_C_API(name, type)                      \
+  KLEIDICV_MULTIVERSION_C_API_WITH_SME(                        \
+      name, KLEIDICV_NEON_IMPL_IF(&kleidicv::neon::exp<type>), \
+      &kleidicv::sve2::exp<type>, &kleidicv::sme::exp<type>,   \
+      &kleidicv::sme2::exp<type>)
 
 KLEIDICV_DEFINE_C_API(kleidicv_exp_f32, float);

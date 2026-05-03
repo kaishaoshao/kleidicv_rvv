@@ -6,5 +6,6 @@
 #include "kleidicv/kleidicv.h"
 #include "kleidicv/transform/rotate.h"
 
-KLEIDICV_MULTIVERSION_C_API_WITH_SME(kleidicv_rotate, &kleidicv::neon::rotate,
-                                     nullptr, &kleidicv::sme::rotate, nullptr);
+KLEIDICV_MULTIVERSION_C_API_WITH_SME(
+    kleidicv_rotate, KLEIDICV_NEON_IMPL_IF(&kleidicv::neon::rotate), nullptr,
+    &kleidicv::sme::rotate, nullptr);

@@ -7,7 +7,8 @@
 #include "kleidicv/kleidicv.h"
 
 KLEIDICV_MULTIVERSION_C_API_WITH_SME(
-    kleidicv_sum_f32, (&kleidicv::neon::sum<float, double>),
+    kleidicv_sum_f32,
+    KLEIDICV_NEON_IMPL_IF((&kleidicv::neon::sum<float, double>)),
     KLEIDICV_SVE2_IMPL_IF((&kleidicv::sve2::sum<float, double>)),
     (&kleidicv::sme::sum<float, double>),
     (&kleidicv::sme2::sum<float, double>));

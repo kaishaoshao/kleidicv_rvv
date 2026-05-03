@@ -8,13 +8,14 @@
 
 KLEIDICV_MULTIVERSION_C_API_WITH_SME(
     kleidicv_gaussian_blur_fixed_stripe_u8,
-    &kleidicv::neon::gaussian_blur_fixed_stripe_u8,
+    KLEIDICV_NEON_IMPL_IF(&kleidicv::neon::gaussian_blur_fixed_stripe_u8),
     KLEIDICV_SVE2_IMPL_IF(kleidicv::sve2::gaussian_blur_fixed_stripe_u8),
     &kleidicv::sme::gaussian_blur_fixed_stripe_u8, nullptr);
 
 KLEIDICV_MULTIVERSION_C_API_WITHOUT_SME(
     kleidicv_gaussian_blur_arbitrary_stripe_u8,
-    &kleidicv::neon::gaussian_blur_arbitrary_stripe_u8, nullptr);
+    KLEIDICV_NEON_IMPL_IF(&kleidicv::neon::gaussian_blur_arbitrary_stripe_u8),
+    nullptr);
 
 namespace kleidicv {
 

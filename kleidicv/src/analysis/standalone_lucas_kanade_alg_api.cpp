@@ -7,7 +7,7 @@
 
 KLEIDICV_MULTIVERSION_C_API_WITH_SME(
     kleidicv_standalone_lucas_kanade_alg_u8,
-    &kleidicv::neon::standalone_lucas_kanade_alg_u8,
+    KLEIDICV_NEON_IMPL_IF(&kleidicv::neon::standalone_lucas_kanade_alg_u8),
     &kleidicv::sve2::standalone_lucas_kanade_alg_u8,
     &kleidicv::sme::standalone_lucas_kanade_alg_u8,
     &kleidicv::sme2::standalone_lucas_kanade_alg_u8);

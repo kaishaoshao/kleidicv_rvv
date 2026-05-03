@@ -9,7 +9,7 @@
 
 KLEIDICV_MULTIVERSION_C_API_WITHOUT_SME(
     kleidicv_warp_perspective_stripe_u8,
-    &kleidicv::neon::warp_perspective_stripe<uint8_t>,
+    KLEIDICV_NEON_IMPL_IF(&kleidicv::neon::warp_perspective_stripe<uint8_t>),
     &kleidicv::sve2::warp_perspective_stripe<uint8_t>);
 
 extern "C" {

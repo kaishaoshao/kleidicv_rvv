@@ -6,15 +6,16 @@
 #include "kleidicv/dispatch.h"
 #include "kleidicv/kleidicv.h"
 
-#define KLEIDICV_DEFINE_C_API_WITH_SME2(name, partialname)              \
-  KLEIDICV_MULTIVERSION_C_API_WITH_SME(                                 \
-      name, &kleidicv::neon::partialname, &kleidicv::sve2::partialname, \
-      &kleidicv::sme::partialname, &kleidicv::sme2::partialname)
+#define KLEIDICV_DEFINE_C_API_WITH_SME2(name, partialname)       \
+  KLEIDICV_MULTIVERSION_C_API_WITH_SME(                          \
+      name, KLEIDICV_NEON_IMPL_IF(&kleidicv::neon::partialname), \
+      &kleidicv::sve2::partialname, &kleidicv::sme::partialname, \
+      &kleidicv::sme2::partialname)
 
-#define KLEIDICV_DEFINE_C_API_WITHOUT_SME2(name, partialname)              \
-  KLEIDICV_MULTIVERSION_C_API_WITH_SME(name, &kleidicv::neon::partialname, \
-                                       &kleidicv::sve2::partialname,       \
-                                       &kleidicv::sme::partialname, nullptr)
+#define KLEIDICV_DEFINE_C_API_WITHOUT_SME2(name, partialname)    \
+  KLEIDICV_MULTIVERSION_C_API_WITH_SME(                          \
+      name, KLEIDICV_NEON_IMPL_IF(&kleidicv::neon::partialname), \
+      &kleidicv::sve2::partialname, &kleidicv::sme::partialname, nullptr)
 
 KLEIDICV_DEFINE_C_API_WITH_SME2(kleidicv_yuv420p_to_rgb_stripe_u8,
                                 yuv420p_to_rgb_stripe_u8);

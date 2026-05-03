@@ -34,7 +34,9 @@ kleidicv_error_t separable_filter_2d(const T *src, size_t src_stride, T *dst,
 
 #define KLEIDICV_DEFINE_C_API(name, type)                                      \
   KLEIDICV_MULTIVERSION_C_API_WITH_SME(                                        \
-      name, &kleidicv::neon::separable_filter_2d_stripe<type>,                 \
+      name,                                                                    \
+      KLEIDICV_NEON_IMPL_IF(                                                   \
+          &kleidicv::neon::separable_filter_2d_stripe<type>),                  \
       KLEIDICV_SVE2_IMPL_IF(kleidicv::sve2::separable_filter_2d_stripe<type>), \
       &kleidicv::sme::separable_filter_2d_stripe<type>, nullptr)
 

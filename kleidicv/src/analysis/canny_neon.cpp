@@ -546,11 +546,4 @@ KLEIDICV_TARGET_FN_ATTRS kleidicv_error_t canny_u8(
 
 }  // namespace kleidicv::neon
 
-extern "C" {
-
-decltype(kleidicv::neon::canny_u8) *kleidicv_canny_u8 =
-    kleidicv::neon::canny_u8;
-
-}  // extern "C"
-
 #endif  // KLEIDICV_EXPERIMENTAL_FEATURE_CANNY

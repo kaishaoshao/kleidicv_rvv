@@ -11,10 +11,10 @@
 #include "kleidicv/resize/resize_linear.h"
 #include "kleidicv/utils.h"
 
-#define KLEIDICV_DEFINE_C_API_ALL(name, called_name)       \
-  KLEIDICV_MULTIVERSION_C_API_WITH_SME(                    \
-      name, &kleidicv::neon::called_name,                  \
-      KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::called_name), \
+#define KLEIDICV_DEFINE_C_API_ALL(name, called_name)             \
+  KLEIDICV_MULTIVERSION_C_API_WITH_SME(                          \
+      name, KLEIDICV_NEON_IMPL_IF(&kleidicv::neon::called_name), \
+      KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::called_name),       \
       &kleidicv::sme::called_name, &kleidicv::sme2::called_name)
 
 KLEIDICV_DEFINE_C_API_ALL(kleidicv_resize_2x2_stripe_u8,
@@ -25,7 +25,8 @@ KLEIDICV_DEFINE_C_API_ALL(kleidicv_resize_4x4_stripe_u8,
 #define DEFINE_RESIZE_API_ALL_VECLEN_16_64(R, CH)                       \
   KLEIDICV_MULTIVERSION_C_API_VECLEN(                                   \
       kleidicv_resize_##CH##ch_r##R##_stripe_u8,                        \
-      (&kleidicv::neon::kleidicv_resize_generic_stripe_u8<R, CH>),      \
+      KLEIDICV_NEON_IMPL_IF(                                            \
+          (&kleidicv::neon::kleidicv_resize_generic_stripe_u8<R, CH>)), \
       KLEIDICV_SVE2_IMPL_IF(                                            \
           (&kleidicv::sve2::kleidicv_resize_generic_stripe_u8<R, CH>)), \
       (&kleidicv::sme::kleidicv_resize_generic_stripe_u8<R, CH>),       \
@@ -42,7 +43,8 @@ KLEIDICV_DEFINE_C_API_ALL(kleidicv_resize_linear_stripe_f32,
                           kleidicv_resize_linear_stripe_f32);
 
 KLEIDICV_MULTIVERSION_C_API_WITH_SME(
-    kleidicv_resize_to_quarter_u8, &kleidicv::neon::resize_to_quarter_u8,
+    kleidicv_resize_to_quarter_u8,
+    KLEIDICV_NEON_IMPL_IF(&kleidicv::neon::resize_to_quarter_u8),
     KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::resize_to_quarter_u8),
     &kleidicv::sme::resize_to_quarter_u8,
     KLEIDICV_SME2_IMPL_IF(&kleidicv::sme2::resize_to_quarter_u8));

@@ -91,12 +91,12 @@
 #include "kleidicv/config.h"
 #include "kleidicv/ctypes.h"
 
-//TODO: check architecture
+// TODO: check architecture
 #if !defined(__aarch64__) && !defined(__riscv)
 #warning "KleidiCV is not officially supported on this architecture"
 #endif
 
-//TODO: check architecture
+// TODO: check architecture
 #if defined(__aarch64__) || defined(__riscv)
 /// Maximum image size in pixels the library accepts.
 ///
