@@ -36,7 +36,8 @@ void dump(const TwoDimensional<ElementType> *elements) {
         std::cout << std::setw(2 * sizeof(ElementType)) << std::setfill('0')
                   << std::hex << +(value & mask) << " ";
       } else {
-        std::cout << elements->at(row, column)[0] << " ";
+        // std::cout << elements->at(row, column)[0] << " ";
+        std::cout << static_cast<float>(elements->at(row, column)[0]) << " ";
       }
     }
 
@@ -58,8 +59,10 @@ template void dump<int64_t>(const TwoDimensional<int64_t> *);
 template void dump<uint64_t>(const TwoDimensional<uint64_t> *);
 template void dump<float>(const TwoDimensional<float> *);
 template void dump<double>(const TwoDimensional<double> *);
+// TODO:
+#if defined(KLEIDICV_FLOAT16_IS_FLOAT)
 template void dump<float16_t>(const TwoDimensional<float16_t> *);
-
+#endif
 std::array<test::ArrayLayout, 8> small_array_layouts(size_t min_width,
                                                      size_t min_height) {
   size_t vl = test::Options::vector_length();

@@ -18,7 +18,13 @@
 
 // This is defined in arm_neon.h or arm_sve.h, but we need it before including
 // those.
+
+// TODO:
+#if defined(__arm__) || defined(__aarch64__)
 typedef __fp16 float16_t;
+#else
+typedef _Float16 float16_t;
+#endif
 
 #include "kleidicv/config.h"
 

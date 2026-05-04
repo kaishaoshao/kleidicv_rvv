@@ -5,6 +5,16 @@
 #ifndef KLEIDICV_TEST_CONFIG_H
 #define KLEIDICV_TEST_CONFIG_H
 
+// TODO:
+// #ifdef __cplusplus
+// #include <ostream>
+
+// inline std::ostream& operator<<(std::ostream& os, float16_t v)
+// {
+//     return os << static_cast<float>(v);
+// }
+// #endif
+
 // Main test configuration switches.
 
 #cmakedefine KLEIDICV_ALLOCATION_TESTS

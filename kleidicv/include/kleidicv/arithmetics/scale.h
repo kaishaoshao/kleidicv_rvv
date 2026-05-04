@@ -14,6 +14,22 @@
 
 namespace kleidicv {
 
+namespace sc {
+
+std::array<uint8_t, 256> precalculate_scale_table_u8(double scale,
+                                                     double shift);
+
+kleidicv_error_t scale_with_precalculated_table_u8(
+    const uint8_t *src, size_t src_stride, uint8_t *dst, size_t dst_stride,
+    size_t width, size_t height, double scale, double shift,
+    const std::array<uint8_t, 256> &precalculated_table);
+
+template <typename T, typename U>
+kleidicv_error_t scale(const T *src, size_t src_stride, U *dst,
+                       size_t dst_stride, size_t width, size_t height,
+                       double scale, double shift);
+}  // namespace sc
+
 namespace neon {
 
 std::array<uint8_t, 256> precalculate_scale_table_u8(double scale,
