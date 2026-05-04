@@ -6,11 +6,13 @@
 #include "kleidicv/dispatch.h"
 #include "kleidicv/kleidicv.h"
 
-#define KLEIDICV_DEFINE_C_API(name, type)                                   \
-  KLEIDICV_MULTIVERSION_C_API_WITH_SME(                                     \
-      name, KLEIDICV_NEON_IMPL_IF(&kleidicv::neon::threshold_binary<type>), \
-      KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::threshold_binary<type>),       \
-      &kleidicv::sme::threshold_binary<type>,                               \
+#define KLEIDICV_DEFINE_C_API(name, type)                               \
+  KLEIDICV_MULTIVERSION_C_API_WITH_SME(                                 \
+      name,                                                             \
+      KLEIDICV_SCALAR_OR_NEON(&kleidicv::sc::threshold_binary<type>,    \
+                              &kleidicv::neon::threshold_binary<type>), \
+      KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::threshold_binary<type>),   \
+      &kleidicv::sme::threshold_binary<type>,                           \
       KLEIDICV_SME2_IMPL_IF(&kleidicv::sme2::threshold_binary<type>))
 
 KLEIDICV_DEFINE_C_API(kleidicv_threshold_binary_u8, uint8_t);

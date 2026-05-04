@@ -6,11 +6,13 @@
 #include "kleidicv/dispatch.h"
 #include "kleidicv/kleidicv.h"
 
-#define KLEIDICV_DEFINE_C_API(name, type)                              \
-  KLEIDICV_MULTIVERSION_C_API_WITH_SME(                                \
-      name, KLEIDICV_NEON_IMPL_IF(&kleidicv::neon::bitwise_and<type>), \
-      KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::bitwise_and<type>),       \
-      &kleidicv::sme::bitwise_and<type>,                               \
+#define KLEIDICV_DEFINE_C_API(name, type)                          \
+  KLEIDICV_MULTIVERSION_C_API_WITH_SME(                            \
+      name,                                                        \
+      KLEIDICV_SCALAR_OR_NEON(&kleidicv::sc::bitwise_and<type>,    \
+                              &kleidicv::neon::bitwise_and<type>), \
+      KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::bitwise_and<type>),   \
+      &kleidicv::sme::bitwise_and<type>,                           \
       KLEIDICV_SME2_IMPL_IF(&kleidicv::sme2::bitwise_and<type>))
 
 KLEIDICV_DEFINE_C_API(kleidicv_bitwise_and, uint8_t);

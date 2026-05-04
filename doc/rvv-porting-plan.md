@@ -91,3 +91,281 @@ SPDX-License-Identifier: Apache-2.0
 - 在这个仓库里，“通用实现”通常是 `*_sc.h` 中的模板路径或标量路径，而不一定是独立的 `.cpp` 文件。
 - 第一批算子最适合做成“普通实现 + RVV 实现”的双路径设计。
 - 对于第二批算子，先抽出清晰的通用后端，再做 RVV，会更容易验证和维护。
+
+## 分发宏与辅助函数说明
+
+下面补充说明当前 API 分发层里几类常见宏和辅助函数的职责，方便后续继续做 `NEON=OFF` 整理和 RVV 接线。
+
+相关实现位置：
+
+- `kleidicv/include/kleidicv/dispatch.h`
+- `kleidicv/src/**/*_api.cpp`
+- `kleidicv/src/analysis/count_nonzeros_api.cpp`
+
+### 整体思路
+
+KleidiCV 的公共 C API 本质上是“函数指针变量”，而不是普通函数定义。
+
+例如 `kleidicv_saturating_add_u8` 最终会被初始化为某个后端实现：
+
+- `neon`
+- `sve2`
+- `sme`
+- `sme2`
+- 或 `sc`
+
+因此 API 层主要解决两件事：
+
+1. 决定公共符号最终指向哪个后端函数。
+2. 在某个后端关闭时，避免留下未定义符号。
+
+### `KLEIDICV_DEFINE_C_API`
+
+示例：
+
+```cpp
+#define KLEIDICV_DEFINE_C_API(name, type)                             \
+  KLEIDICV_MULTIVERSION_C_API_WITH_SME(                               \
+      name,                                                           \
+      KLEIDICV_SCALAR_OR_NEON(&kleidicv::sc::saturating_add<type>,    \
+                              &kleidicv::neon::saturating_add<type>), \
+      KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::saturating_add<type>),   \
+      &kleidicv::sme::saturating_add<type>,                           \
+      KLEIDICV_SME2_IMPL_IF(&kleidicv::sme2::saturating_add<type>))
+```
+
+作用：
+
+- 这是每个算子文件内部的包装宏。
+- 用于减少重复代码。
+- 把某个算子的 `sc/neon/sve2/sme/sme2` 候选实现统一传给底层分发宏。
+
+可以理解为：
+
+- `KLEIDICV_DEFINE_C_API` 负责描述候选实现集合。
+- `KLEIDICV_MULTIVERSION_C_API_*` 负责真正生成公共 API 符号。
+
+### `KLEIDICV_MULTIVERSION_C_API_WITHOUT_SME`
+
+作用：
+
+- 为“只有基础后端 + SVE2，没有 `_sme` 变体”的 API 生成公共符号。
+
+它会生成：
+
+- 一个 resolver
+- 一个 `extern "C"` 的函数指针变量
+
+选择逻辑通常是：
+
+1. 如果 SVE2 可用且允许参与分发，优先返回 SVE2。
+2. 否则返回基础实现。
+
+这里的基础实现现在不一定是 NEON，也可能是 `sc`。
+
+### `KLEIDICV_MULTIVERSION_C_API_WITH_SME`
+
+作用：
+
+- 为“有默认 API 和 `_sme` API”的接口生成两个公共符号。
+
+通常会生成：
+
+- `api_name`
+- `api_name_sme`
+
+大致策略：
+
+- 默认入口 `api_name`
+1. 如果 `KLEIDICV_PREFER_SME_BACKEND=ON`，优先尝试 `sme2 -> sme`
+2. 否则尝试 `sve2`
+3. 最后回退到基础实现
+
+- `_sme` 入口 `api_name_sme`
+1. 优先尝试 `sme2 -> sme`
+2. 然后尝试 `sve2`
+3. 最后回退到基础实现
+
+### `KLEIDICV_MULTIVERSION_C_API_VECLEN`
+
+作用：
+
+- 和 `WITH_SME` 类似，但会额外检查向量长度。
+- 用于那些需要按 SVE/SME 向量长度选择实现的 API。
+
+### `KLEIDICV_NEON_IMPL_IF`
+
+定义思路：
+
+```cpp
+#if KLEIDICV_ENABLE_NEON
+#define KLEIDICV_NEON_IMPL_IF(func) func
+#else
+#define KLEIDICV_NEON_IMPL_IF(func) (&NotImplementedBackend<decltype(func)>::fn)
+#endif
+```
+
+作用：
+
+- `KLEIDICV_ENABLE_NEON=ON` 时，返回真实 NEON 函数指针。
+- `KLEIDICV_ENABLE_NEON=OFF` 时，不再引用 `kleidicv::neon::*`，而是返回一个统一的“未实现占位函数”。
+
+它主要解决的问题是：
+
+- 以前即使关掉 NEON，很多 `*_api.cpp` 仍然会静态引用 `kleidicv::neon::*`。
+- 这会在链接阶段报未定义符号。
+
+### `NotImplementedBackend`
+
+定义思路：
+
+```cpp
+template <typename FuncPtr>
+struct NotImplementedBackend;
+
+template <typename... Args>
+struct NotImplementedBackend<kleidicv_error_t (*)(Args...)> {
+  static kleidicv_error_t fn(Args...) { return KLEIDICV_ERROR_NOT_IMPLEMENTED; }
+};
+```
+
+作用：
+
+- 根据函数指针类型自动生成一个同签名的占位函数。
+- 这样 `KLEIDICV_NEON_IMPL_IF` 在 NEON 关闭时仍然能返回类型匹配的函数指针。
+
+价值：
+
+- 不需要为每个 API 单独写 stub。
+- 类型安全。
+- 能满足 `decltype(...)` 相关宏展开要求。
+
+### `KLEIDICV_SCALAR_OR_NEON`
+
+定义思路：
+
+```cpp
+#if KLEIDICV_ENABLE_NEON
+#define KLEIDICV_SCALAR_OR_NEON(scalar_impl, neon_impl) neon_impl
+#else
+#define KLEIDICV_SCALAR_OR_NEON(scalar_impl, neon_impl) scalar_impl
+#endif
+```
+
+作用：
+
+- `NEON=ON` 时，基础后端仍使用原来的 NEON。
+- `NEON=OFF` 时，基础后端切到普通实现 `sc`。
+
+和 `KLEIDICV_NEON_IMPL_IF` 的区别：
+
+- `KLEIDICV_NEON_IMPL_IF`：关掉 NEON 后回退成“未实现 stub”。
+- `KLEIDICV_SCALAR_OR_NEON`：关掉 NEON 后回退成“真实可执行的普通实现”。
+
+因此：
+
+- 某个算子已经补了普通实现时，优先用 `KLEIDICV_SCALAR_OR_NEON`。
+- 还没有普通实现时，只能先用 `KLEIDICV_NEON_IMPL_IF`。
+
+### `KLEIDICV_SVE2_IMPL_IF` / `KLEIDICV_SME2_IMPL_IF`
+
+作用：
+
+- 根据 `KLEIDICV_ALWAYS_ENABLE_SVE2` / `KLEIDICV_ALWAYS_ENABLE_SME2` 的配置决定是否让某个后端参与候选集。
+
+行为：
+
+- 条件满足：返回真实实现。
+- 条件不满足：返回 `nullptr`。
+
+它们主要控制“编译期是否允许参与候选集”，不是运行时检测本身。
+
+### `kleidicv::sc` 命名空间中的普通实现辅助函数
+
+当前这些 helper 放在 `dispatch.h` 中，主要是为了在不新增文件的前提下，让 `NEON=OFF` 时可以直接回退到普通实现。
+
+#### `row_ptr`
+
+作用：
+
+- 根据 `base + stride + y` 取出某一行的首地址。
+
+#### `saturate_cast`
+
+作用：
+
+- 把更宽的中间结果安全收窄回目标类型。
+- 超范围时裁剪到 `min/max`。
+
+#### `binary_image_op`
+
+作用：
+
+- 统一封装“双输入一输出”的逐像素遍历框架。
+
+它负责：
+
+- 参数检查
+- 行遍历
+- 列遍历
+- 对每个像素执行 `fn(a, b)`
+
+#### `unary_image_op`
+
+作用：
+
+- 统一封装“单输入一输出”的逐像素遍历框架。
+
+#### 当前已经放进 `kleidicv::sc` 的普通实现
+
+- `saturating_add`
+- `saturating_sub`
+- `saturating_absdiff`
+- `saturating_multiply`
+- `bitwise_and`
+- `compare_equal`
+- `compare_greater`
+- `threshold_binary`
+- `in_range`
+- `scale`
+- `sum`
+- `min_max`
+- `min_max_loc`
+
+这些实现的目标是：
+
+- 在关闭 NEON 后给 API 一个可工作的基础后端。
+- 让主库、测试和示例先具备可编译、可链接、可运行的保底路径。
+
+### 为什么 `count_nonzeros` / `canny` 还是手工 resolver
+
+相关位置：
+
+- `kleidicv/src/analysis/count_nonzeros_api.cpp`
+- `kleidicv/src/analysis/canny_api.cpp`
+
+原因是这两个接口原来不是标准的 `*_api.cpp + KLEIDICV_MULTIVERSION_*` 结构，而是把公共符号直接定义在 `*_neon.cpp` 里。
+
+所以这里需要手工把公共符号挪回 API 层，再由 resolver 决定：
+
+- `NEON=ON` 时走 `kleidicv::neon::*`
+- `NEON=OFF` 时走 `kleidicv::sc::*`
+
+### 对 RVV 移植的意义
+
+这套机制对 RVV 移植的意义很直接：
+
+- `KLEIDICV_NEON_IMPL_IF` 先解决“关掉 NEON 后能不能编”的问题。
+- `KLEIDICV_SCALAR_OR_NEON` 再解决“关掉 NEON 后能不能跑”的问题。
+- `KLEIDICV_MULTIVERSION_C_API_*` 则提供统一的 API 接线点。
+
+后续如果新增 RVV 后端，常见做法有两种：
+
+1. 在现有分发体系中加入 RVV 候选实现。
+2. 在 RISC-V 配置下，把基础实现从 `sc` 切到 `rvv`。
+
+无论采用哪种方式，这些宏的核心职责都不变：
+
+- 统一 API 符号生成
+- 隔离后端差异
+- 避免某个后端开关直接破坏链接关系

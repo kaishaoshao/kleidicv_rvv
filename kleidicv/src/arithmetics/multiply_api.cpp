@@ -6,18 +6,22 @@
 #include "kleidicv/dispatch.h"
 #include "kleidicv/kleidicv.h"
 
-#define KLEIDICV_DEFINE_C_API(name, type)                                      \
-  KLEIDICV_MULTIVERSION_C_API_WITH_SME(                                        \
-      name, KLEIDICV_NEON_IMPL_IF(&kleidicv::neon::saturating_multiply<type>), \
-      KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::saturating_multiply<type>),       \
-      &kleidicv::sme::saturating_multiply<type>,                               \
+#define KLEIDICV_DEFINE_C_API(name, type)                                  \
+  KLEIDICV_MULTIVERSION_C_API_WITH_SME(                                    \
+      name,                                                                \
+      KLEIDICV_SCALAR_OR_NEON(&kleidicv::sc::saturating_multiply<type>,    \
+                              &kleidicv::neon::saturating_multiply<type>), \
+      KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::saturating_multiply<type>),   \
+      &kleidicv::sme::saturating_multiply<type>,                           \
       KLEIDICV_SME2_IMPL_IF(&kleidicv::sme2::saturating_multiply<type>))
 
-#define KLEIDICV_DEFINE_C_API_WITH_DEFAULT_SME(name, type)                     \
-  KLEIDICV_MULTIVERSION_C_API_WITH_SME(                                        \
-      name, KLEIDICV_NEON_IMPL_IF(&kleidicv::neon::saturating_multiply<type>), \
-      KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::saturating_multiply<type>),       \
-      &kleidicv::sme::saturating_multiply<type>,                               \
+#define KLEIDICV_DEFINE_C_API_WITH_DEFAULT_SME(name, type)                 \
+  KLEIDICV_MULTIVERSION_C_API_WITH_SME(                                    \
+      name,                                                                \
+      KLEIDICV_SCALAR_OR_NEON(&kleidicv::sc::saturating_multiply<type>,    \
+                              &kleidicv::neon::saturating_multiply<type>), \
+      KLEIDICV_SVE2_IMPL_IF(&kleidicv::sve2::saturating_multiply<type>),   \
+      &kleidicv::sme::saturating_multiply<type>,                           \
       &kleidicv::sme2::saturating_multiply<type>)
 
 KLEIDICV_DEFINE_C_API_WITH_DEFAULT_SME(kleidicv_saturating_multiply_u8,
